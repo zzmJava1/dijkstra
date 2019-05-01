@@ -1,0 +1,146 @@
+import java.util.LinkedList;
+
+public class Graph3 {
+	private int v;
+	private LinkedList<Edge> [] adj;
+	
+	public Graph3(int v) {
+		this.v=v;
+		adj=new LinkedList[v];
+		for(int i=0;i<v;i++) {
+			adj[i]=new LinkedList<>();
+		}
+	}
+	public void addEdge(int s,int t,int w) {//s->t
+		adj[s].add(new Edge(s,t,w));
+	}
+	private class Edge {
+		int sid;
+		int tid;
+		int w;
+		public Edge(int sid, int tid, int w) {
+			super();
+			this.sid = sid;
+			this.tid = tid;
+			this.w = w;
+		}
+		
+	}
+	private class Vertex {//// 根据 vertex.dist 构建小顶堆
+		public int id;
+		public int dist;
+		public Vertex(int id, int dist) {
+			super();
+			this.id = id;
+			this.dist = dist;
+		}
+	}
+	private class PriorityQueue {//构建小顶堆
+		private Vertex[] nodes;
+		private int count;
+		int n;
+		public PriorityQueue(int v) {
+			this.nodes=new Vertex[v+1];
+			this.n=v;
+		}
+		public Vertex poll() {
+			if(count<1)return null;
+			Vertex temp=nodes[1];
+			nodes[1]=nodes[count--];
+			heaplify(nodes,count,1);
+			return temp;
+		}
+		private void heaplify(Vertex[] a,int n,int i) {
+			if(n<1)return;
+			int min=i;
+			while(true) {
+				//找到子节点比该结点小的中较小的
+				if(2*i<=n&&a[2*i].dist<a[min].dist)min=2*i;
+				if(2*i+1<=n&&a[2*i+1].dist<a[min].dist)min=2*i+1;
+				//该节点比子节点大堆化完毕
+				if(min==i)	return;
+				//交换两节点
+				Vertex temp=a[min];
+				a[min]=a[i];
+				a[i]=temp;
+				i=min;//迭代条件
+			}
+		}
+		public void add(Vertex ver) {
+			if(count>=n)return;
+			nodes[++count]=ver;
+			int i=count;
+			while(i/2>0&&nodes[i/2].dist>nodes[i].dist) {
+				Vertex temp=nodes[i/2];
+				nodes[i/2]=nodes[i];
+				nodes[i]=temp;
+				i=i/2;
+			}
+		}
+		// 更新结点的值，并且从下往上堆化，重新符合堆的定义。时间复杂度 O(logn)。
+		public void update(Vertex vertex) {
+			int i=1;
+			for(;i<=n;i++) {
+				if(nodes[i].id==vertex.id)break;
+			}
+			nodes[i].dist=vertex.dist;
+			heaplify(nodes,count,i);
+		}
+		public boolean isEmpty() {
+			if(count<1)return true;
+			return false;
+		}
+	}
+	public void dijkstra(int s, int t) { // 从顶点 s 到顶点 t 的最短路径
+		int [] pre=new int[v];
+		Vertex[] vertexs=new Vertex[v];
+		//初始化
+		for(int i=0;i<v;i++) {
+			vertexs[i]=new Vertex(i,Integer.MAX_VALUE);
+		}
+		PriorityQueue queue = new PriorityQueue(v);// 小顶堆
+		boolean[] inqueue=new boolean[v];
+		vertexs[s].dist=0;
+		queue.add(vertexs[s]);
+		inqueue[s]=true;
+		while(!queue.isEmpty()) {
+			Vertex minV=queue.poll();
+			if(minV.id==t)break;
+			for(int i=0;i<adj[minV.id].size();i++) {
+				Edge e=adj[minV.id].get(i);
+				Vertex next=vertexs[e.tid];
+				if (minV.dist + e.w < next.dist) {
+					next.dist=minV.dist + e.w;
+					pre[next.id]=minV.id;
+					if(inqueue[next.id]) {
+						queue.update(next);
+					}else {
+						inqueue[next.id]=true;
+						queue.add(next);
+					}
+				}
+			}
+		}
+		// 输出最短路径   
+		System.out.print(s);   
+		print(s, t, pre);
+	}
+	private void print(int s, int t, int[] pre) {
+		if(s==t)return;
+		print(s,pre[t],pre);
+		System.out.print("->"+t);
+		
+	}
+	public static void main(String[] args) {
+		Graph3 g=new Graph3(6);
+		g.addEdge(0, 1, 10);
+		g.addEdge(0, 4, 15);
+		g.addEdge(1, 2, 15);
+		g.addEdge(1, 3, 2);
+		g.addEdge(3, 2, 1);
+		g.addEdge(3, 5, 12);
+		g.addEdge(2, 5, 5);
+		g.addEdge(4,5, 10);
+		g.dijkstra(0, 5);
+	}
+}
